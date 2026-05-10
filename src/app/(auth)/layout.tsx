@@ -1,0 +1,16 @@
+import Navbar from '@/components/layout/navbar'
+
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <div className="min-h-screen flex flex-col bg-muted/5">
+      <Navbar user={null} />
+      <main className="flex-1 flex items-center justify-center p-4">
+        {children}
+      </main>
+    </div>
+  )
+}
