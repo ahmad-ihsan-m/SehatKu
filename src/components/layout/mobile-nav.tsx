@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { useCartCount } from '@/store/cart'
 import { useUIStore } from '@/store/ui'
+import { logoutAction } from '@/features/auth/actions'
 import type { AuthUser } from '@/types/database'
 
 interface MobileNavProps {

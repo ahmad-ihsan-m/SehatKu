@@ -8,6 +8,11 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "SehatKu - Apotek Digital",
   description: "Platform apotek digital modern dan tepercaya.",
+  icons: {
+    icon: "/favicon.png?v=1",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

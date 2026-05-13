@@ -1,16 +1,30 @@
-import Navbar from '@/components/layout/navbar'
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import type { UserRole } from '@/types/database'
 
-export default function AuthLayout({
+function getRoleRedirect(role: UserRole): string {
+  if (role === 'admin') return '/admin'
+  if (role === 'pharmacist') return '/pharmacist'
+  return '/dashboard'
+}
+
+export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return (
-    <div className="min-h-screen flex flex-col bg-muted/5">
-      <Navbar user={null} />
-      <main className="flex-1 flex items-center justify-center p-4">
-        {children}
-      </main>
-    </div>
-  )
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    redirect(getRoleRedirect((profile?.role as UserRole) ?? 'customer'))
+  }
+
+  return <>{children}</>
 }

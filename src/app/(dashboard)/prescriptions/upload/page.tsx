@@ -70,7 +70,6 @@ function UploadPrescriptionForm() {
     } else {
       toast.success('Resep berhasil diupload!')
       router.push('/prescriptions')
-      router.refresh()
     }
   }
 

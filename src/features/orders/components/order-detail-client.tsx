@@ -15,6 +15,11 @@ import {
   Pill,
   ShoppingBag,
   Loader2,
+  Lock,
+  Banknote,
+  Wallet,
+  QrCode,
+  AlertTriangle,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -270,7 +275,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                   <div key={item.id} className="flex items-center gap-4 px-6 py-4 hover:bg-muted/5 transition-colors">
                     <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0 border border-muted-foreground/5 relative overflow-hidden">
                       <SafeImage
-                        src={item.medicines?.image_url}
+                        src={item.medicines?.image_url ?? null}
                         alt={item.medicines?.name || 'Obat'}
                         fill
                         className="object-cover"
@@ -302,33 +307,101 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
         </div>
 
         <div className="lg:col-span-4 space-y-6">
-          {/* Action Card (Payment) */}
+          {/* ── Payment Pending Card ── */}
           {needsPayment && !isCancelled && (
-            <Card className="rounded-3xl border-none bg-primary shadow-xl shadow-primary/20 text-primary-foreground overflow-hidden">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-black flex items-center gap-2">
-                  <CreditCard className="w-5 h-5" />
-                  Selesaikan Pembayaran
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-xs font-medium opacity-90 leading-relaxed">
-                  Pesanan Anda telah kami terima. Silakan lakukan pembayaran agar pesanan segera kami proses.
-                </p>
-                <div className="bg-white/10 rounded-2xl p-4 flex flex-col gap-1">
-                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">Status Pembayaran</span>
-                  <span className="text-sm font-black uppercase tracking-tight">Menunggu Pembayaran</span>
+            <div className="rounded-2xl overflow-hidden border border-amber-200 dark:border-amber-900/50 shadow-lg shadow-amber-100/50 dark:shadow-amber-900/20">
+              {/* Urgent header */}
+              <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="relative">
+                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                        <CreditCard className="w-4 h-4 text-white" />
+                      </div>
+                      {/* Pulsing dot */}
+                      <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-60" />
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-white" />
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-white font-black text-sm leading-none">Selesaikan Pembayaran</p>
+                      <p className="text-white/70 text-[10px] font-medium mt-0.5">Menunggu konfirmasi pembayaran</p>
+                    </div>
+                  </div>
+                  <AlertTriangle className="w-4 h-4 text-white/80" />
                 </div>
-                <Button 
-                  onClick={handlePayment} 
+              </div>
+
+              <div className="bg-background px-5 py-4 space-y-4">
+                {/* Total amount */}
+                <div className="flex flex-col gap-0.5">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    Total yang Harus Dibayar
+                  </p>
+                  <p className="text-3xl font-black text-foreground tracking-tight">
+                    {formatPrice(order.total_amount)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Pesanan #{order.id.slice(0, 8).toUpperCase()} &middot; {order.order_items.length} item
+                  </p>
+                </div>
+
+                <Separator className="bg-border/40" />
+
+                {/* Payment methods */}
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    Metode Pembayaran
+                  </p>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[
+                      { icon: Banknote, label: 'Transfer\nBank' },
+                      { icon: Wallet, label: 'E-\nWallet' },
+                      { icon: QrCode, label: 'QRIS' },
+                      { icon: CreditCard, label: 'Kartu\nKredit' },
+                    ].map(({ icon: Icon, label }) => (
+                      <div
+                        key={label}
+                        className="flex flex-col items-center gap-1 p-2 rounded-xl bg-muted/50 border border-border/30"
+                      >
+                        <Icon className="w-3.5 h-3.5 text-primary" />
+                        <span className="text-[8px] font-bold text-center leading-tight text-muted-foreground whitespace-pre-line">
+                          {label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CTA button */}
+                <Button
+                  onClick={handlePayment}
                   disabled={isPaying}
-                  className="w-full bg-white text-primary hover:bg-white/90 rounded-2xl h-12 font-black shadow-lg"
+                  className="w-full h-12 font-black text-sm rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 shadow-lg shadow-amber-200 dark:shadow-amber-900/30"
                 >
-                  {isPaying ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  BAYAR SEKARANG
+                  {isPaying ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Memuat pembayaran...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <CreditCard className="w-4 h-4" />
+                      Bayar Sekarang
+                    </span>
+                  )}
                 </Button>
-              </CardContent>
-            </Card>
+
+                {/* Security note */}
+                <div className="flex items-center justify-center gap-1.5">
+                  <Lock className="w-3 h-3 text-emerald-600" />
+                  <p className="text-[10px] text-muted-foreground font-medium">
+                    Diproses aman oleh <span className="text-foreground font-bold">Midtrans</span> &middot; SSL Encrypted
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Details info */}

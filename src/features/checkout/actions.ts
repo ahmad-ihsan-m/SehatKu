@@ -37,7 +37,7 @@ export async function checkoutAction(formData: FormData): Promise<ActionResult &
     return { error: 'Keranjang Anda kosong' }
   }
 
-  const items = cart.cart_items as Array<{
+  const items = (cart.cart_items as unknown) as Array<{
     id: string
     medicine_id: string
     quantity: number
@@ -123,37 +123,30 @@ export async function checkoutAction(formData: FormData): Promise<ActionResult &
     amount: totalAmount,
   })
 
-  // 4. Reduce stock atomically
-  for (const item of items) {
-    const { data: success, error: stockError } = await supabase.rpc('decrement_stock', {
-      medicine_id: item.medicine_id,
-      amount: item.quantity
-    })
+  // Stock is intentionally NOT deducted at checkout.
+  // Deduction happens atomically when order status → 'delivered' via deduct_order_stock().
+  // This prevents phantom stock reservations from unpaid orders.
 
-    if (stockError || !success) {
-      // Note: In a real production app, you might want to rollback the order here
-      console.error(`Stock reduction failed for ${item.medicine_id}:`, stockError)
-    }
-  }
-
-  // 5. Clear cart
+  // 4. Clear cart
   await supabase.from('cart_items').delete().eq('cart_id', cart.id)
 
-  // 6. Create notification
+  // 5. Create notification
   await supabase.from('notifications').insert({
     user_id: user.id,
     title: 'Pesanan Dibuat',
     message: `Segera selesaikan pembayaran untuk pesanan #${order.id.slice(0, 8).toUpperCase()}`,
   })
 
-  // 7. Initialize Midtrans Payment
+  // 6. Initialize Midtrans Payment
   const paymentResult = await initializePaymentAction(order.id)
 
   revalidatePath('/cart')
   revalidatePath('/orders')
   
   if (paymentResult.error) {
-    return { success: true, error: `Pesanan dibuat tapi: ${paymentResult.error}` }
+    // Order was created but payment could not be initialized.
+    // Return error so client can surface this; order stays as 'pending' for retry.
+    return { error: `Pesanan dibuat namun pembayaran gagal dimulai: ${paymentResult.error}` }
   }
 
   return { success: true, snapToken: paymentResult.snapToken }

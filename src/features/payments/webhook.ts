@@ -84,27 +84,29 @@ export async function processMidtransWebhook(payload: WebhookPayload) {
 
   // 4. Stock Recovery Logic
   if (orderStatus === 'cancelled') {
-    const { data: items } = await supabase
-      .from('order_items')
-      .select('medicine_id, quantity')
-      .eq('order_id', order_id)
+    // Idempotent restore: only restores if stock_deducted = true on the order.
+    // Since checkout no longer deducts stock (deduction happens at 'delivered'),
+    // this is effectively a no-op for most cancellations — but is safe to call regardless.
+    const { error: rpcError } = await supabase
+      .rpc('restore_order_stock', { p_order_id: order_id })
 
-    if (items) {
-      for (const item of items) {
-        // Safe stock restoration using RPC
-        await supabase.rpc('increment_stock', { 
-          medicine_id: item.medicine_id, 
-          amount: item.quantity 
-        })
-      }
+    if (rpcError) {
+      console.error(`[PaymentWebhook] restore_order_stock failed for order ${order_id}:`, rpcError)
     }
-    
-    // Notify user about cancellation
-    await supabase.from('notifications').insert({
-      user_id: (await supabase.from('orders').select('user_id').eq('id', order_id).single()).data?.user_id,
-      title: 'Pesanan Dibatalkan',
-      message: `Pesanan #${order_id.slice(0, 8).toUpperCase()} dibatalkan karena pembayaran ${paymentStatus === 'expired' ? 'kedaluwarsa' : 'gagal'}.`,
-    })
+
+    const { data: orderData } = await supabase
+      .from('orders')
+      .select('user_id')
+      .eq('id', order_id)
+      .single()
+
+    if (orderData) {
+      await supabase.from('notifications').insert({
+        user_id: orderData.user_id,
+        title: 'Pesanan Dibatalkan',
+        message: `Pesanan #${order_id.slice(0, 8).toUpperCase()} dibatalkan karena pembayaran ${paymentStatus === 'expired' ? 'kedaluwarsa' : 'gagal'}.`,
+      })
+    }
   } else if (paymentStatus === 'paid') {
      // Notify user about success
      const { data: orderData } = await supabase.from('orders').select('user_id').eq('id', order_id).single()

@@ -27,6 +27,20 @@ export async function cancelOrderAction(orderId: string): Promise<ActionResult> 
     return { error: 'Pesanan hanya bisa dibatalkan saat masih pending' }
   }
 
+  // Restore stock if it was previously deducted (idempotent — safe if stock_deducted = false)
+  const { data: restoreData, error: rpcError } = await supabase
+    .rpc('restore_order_stock', { p_order_id: orderId })
+
+  if (rpcError) {
+    console.error('[cancelOrderAction] restore_order_stock error:', rpcError)
+    // Don't block cancellation for stock restore failures
+  } else {
+    const result = restoreData as { success: boolean; restored?: boolean }
+    if (result.restored) {
+      console.log(`[cancelOrderAction] Stock restored for order ${orderId}`)
+    }
+  }
+
   const { error } = await supabase
     .from('orders')
     .update({ status: 'cancelled' })
@@ -34,7 +48,6 @@ export async function cancelOrderAction(orderId: string): Promise<ActionResult> 
 
   if (error) return { error: 'Gagal membatalkan pesanan' }
 
-  // Also update payment status
   await supabase
     .from('payments')
     .update({ status: 'failed' })

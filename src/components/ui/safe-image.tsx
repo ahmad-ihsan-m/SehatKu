@@ -5,7 +5,8 @@ import Image, { ImageProps } from 'next/image'
 import { cn } from '@/lib/utils'
 import { Pill } from 'lucide-react'
 
-interface SafeImageProps extends Omit<ImageProps, 'onError'> {
+interface SafeImageProps extends Omit<ImageProps, 'onError' | 'src'> {
+  src?: ImageProps['src'] | null
   fallback?: React.ReactNode
   containerClassName?: string
 }

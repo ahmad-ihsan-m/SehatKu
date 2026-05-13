@@ -60,6 +60,46 @@ export async function deleteMedicineAction(id: string): Promise<ActionResult> {
 export async function updateOrderStatusAction(orderId: string, status: OrderStatus): Promise<ActionResult> {
   await requireAdmin()
   const supabase = await createClient()
+
+  // ── Stock deduction: only when order is finalized as delivered ──
+  if (status === 'delivered') {
+    const { data, error: rpcError } = await supabase
+      .rpc('deduct_order_stock', { p_order_id: orderId })
+
+    if (rpcError) {
+      console.error('[updateOrderStatusAction] deduct_order_stock RPC error:', rpcError)
+      return { error: `Gagal memproses stok: ${rpcError.message}` }
+    }
+
+    const result = data as { success: boolean; error?: string; already_deducted?: boolean }
+
+    if (!result.success) {
+      // Stock insufficient — block status change, surface clear error to admin
+      return { error: result.error ?? 'Stok tidak mencukupi, status tidak dapat diubah ke Selesai.' }
+    }
+
+    if (result.already_deducted) {
+      console.log(`[updateOrderStatusAction] Order ${orderId}: stock already deducted, skipping.`)
+    }
+  }
+
+  // ── Stock restoration: when admin manually cancels a delivered order ──
+  if (status === 'cancelled') {
+    const { data, error: rpcError } = await supabase
+      .rpc('restore_order_stock', { p_order_id: orderId })
+
+    if (rpcError) {
+      // Log but don't block cancellation — restored stock is a best-effort
+      console.error('[updateOrderStatusAction] restore_order_stock RPC error:', rpcError)
+    } else {
+      const result = data as { success: boolean; restored?: boolean }
+      if (result.restored) {
+        console.log(`[updateOrderStatusAction] Order ${orderId}: stock restored on cancellation.`)
+      }
+    }
+  }
+
+  // ── Update order status ──
   const { error } = await supabase
     .from('orders')
     .update({ status })
@@ -67,9 +107,13 @@ export async function updateOrderStatusAction(orderId: string, status: OrderStat
 
   if (error) return { error: error.message }
 
-  // If status is delivered, also update payment if pending
+  // ── Sync payment status on delivery ──
   if (status === 'delivered') {
-    await supabase.from('payments').update({ status: 'paid' }).eq('order_id', orderId).eq('status', 'pending')
+    await supabase
+      .from('payments')
+      .update({ status: 'paid' })
+      .eq('order_id', orderId)
+      .eq('status', 'pending')
   }
 
   revalidatePath('/admin/orders')

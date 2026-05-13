@@ -5,7 +5,7 @@ import { PrescriptionReviewPanel } from '@/features/pharmacist/components/prescr
 import { DeletePrescriptionButton } from '@/features/pharmacist/components/delete-prescription-button'
 import { requirePharmacist } from '@/lib/auth/guards'
 import { Pill } from 'lucide-react'
-import Image from 'next/image'
+import { SafeImage } from '@/components/ui/safe-image'
 
 export default async function PharmacistPrescriptionsPage() {
   await requirePharmacist()
@@ -23,19 +23,13 @@ export default async function PharmacistPrescriptionsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {prescriptions.map((rx) => (
           <Card key={rx.id} className="overflow-hidden border-none shadow-sm group">
-            <div className="aspect-[4/5] relative bg-muted">
-              {rx.signedImageUrl ? (
-                <Image 
-                  src={rx.signedImageUrl} 
-                  alt="Resep" 
-                  fill
-                  className="object-cover transition-transform group-hover:scale-105" 
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs p-4 text-center">
-                  Gambar tidak tersedia atau akses ditolak
-                </div>
-              )}
+            <div className="aspect-[4/5] overflow-hidden">
+              <SafeImage
+                src={rx.signedImageUrl}
+                alt="Resep"
+                className="object-cover transition-transform group-hover:scale-105"
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              />
               
               {/* Actions Overlay */}
               <div className="absolute top-3 left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">

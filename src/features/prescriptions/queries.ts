@@ -5,16 +5,13 @@ export interface PrescriptionWithSignedUrl extends Prescription {
   signedImageUrl: string | null
 }
 
-/**
- * Extracts the storage path from a Supabase storage URL.
- * Supabase stores full URLs like:
- *   https://xxx.supabase.co/storage/v1/object/prescriptions/userId/file.jpg
- * We need just: userId/file.jpg
- */
 function extractStoragePath(imageUrl: string): string {
+  // Raw storage path stored by clientUploadPrivate (most common case)
+  if (!imageUrl.startsWith('http')) return imageUrl
+  // Legacy: full Supabase URL — extract path after bucket name
   const marker = '/object/prescriptions/'
   const idx = imageUrl.indexOf(marker)
-  if (idx === -1) return imageUrl // fallback — unexpected format
+  if (idx === -1) return imageUrl
   return imageUrl.slice(idx + marker.length)
 }
 

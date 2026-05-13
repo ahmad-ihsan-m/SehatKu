@@ -81,6 +81,8 @@ export interface Order {
   user_id: string
   prescription_id: string | null
   status: OrderStatus
+  payment_status: PaymentStatus
+  stock_deducted: boolean
   total_amount: number
   shipping_address: string
   created_at: string

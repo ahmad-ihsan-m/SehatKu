@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { requireCustomer } from '@/lib/auth/guards'
 import { getPrescriptions } from '@/features/prescriptions/queries'
 import type { PrescriptionStatus } from '@/types/database'
-import Image from 'next/image'
+import { SafeImage } from '@/components/ui/safe-image'
 
 function formatDate(dateStr: string) {
   return new Intl.DateTimeFormat('id-ID', {
@@ -128,17 +128,18 @@ export default async function PrescriptionsPage() {
                         <Card key={rx.id} className="hover:shadow-md transition-shadow">
                           <CardContent className="p-4">
                             <div className="flex items-start gap-3">
-                              <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden relative">
-                                {rx.signedImageUrl ? (
-                                  <Image
-                                    src={rx.signedImageUrl}
-                                    alt="Resep"
-                                    fill
-                                    className="object-cover"
-                                  />
-                                ) : (
-                                  <FileText className="w-6 h-6 text-muted-foreground" />
-                                )}
+                              <div className="w-16 h-16 rounded-lg shrink-0 overflow-hidden">
+                                <SafeImage
+                                  src={rx.signedImageUrl}
+                                  alt="Resep"
+                                  className="object-cover"
+                                  sizes="64px"
+                                  fallback={
+                                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                                      <FileText className="w-6 h-6 text-muted-foreground" />
+                                    </div>
+                                  }
+                                />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
