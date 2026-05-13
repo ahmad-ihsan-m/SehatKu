@@ -39,7 +39,7 @@ export function UserRoleManager({ userId, currentRole }: UserRoleManagerProps) {
   return (
     <div className="flex justify-end items-center gap-2">
       {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />}
-      <Select value={role} onValueChange={handleRoleChange} disabled={isLoading}>
+      <Select value={role} onValueChange={(v) => { if (v) void handleRoleChange(v) }} disabled={isLoading}>
         <SelectTrigger className="w-[120px] h-8 text-xs">
           <SelectValue placeholder="Peran" />
         </SelectTrigger>

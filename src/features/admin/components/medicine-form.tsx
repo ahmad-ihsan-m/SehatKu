@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, Upload, X, Pill, Info, DollarSign, Package, Factory, Activity, Tag, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -43,7 +43,7 @@ export function MedicineForm({ categories, initialData, onSubmit, isLoading: isS
   const [preview, setPreview] = useState<string | null>(initialData?.image_url || null)
 
   const form = useForm<MedicineFormValues>({
-    resolver: zodResolver(medicineSchema),
+    resolver: zodResolver(medicineSchema) as Resolver<MedicineFormValues>,
     defaultValues: {
       name: initialData?.name || '',
       category_id: initialData?.category_id || '',

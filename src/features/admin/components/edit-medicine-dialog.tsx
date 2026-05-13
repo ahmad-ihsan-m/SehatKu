@@ -129,7 +129,14 @@ export function EditMedicineDialog({
           >
             <MedicineForm
               categories={categories}
-              initialData={medicine}
+              initialData={{
+                ...medicine,
+                category_id: medicine.category_id ?? undefined,
+                description: medicine.description ?? undefined,
+                image_url: medicine.image_url ?? undefined,
+                dosage: medicine.dosage ?? undefined,
+                manufacturer: medicine.manufacturer ?? undefined,
+              }}
               onSubmit={onSubmit}
               isLoading={isLoading}
             />

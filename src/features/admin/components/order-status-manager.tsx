@@ -39,7 +39,7 @@ export function OrderStatusManager({ orderId, currentStatus }: OrderStatusManage
   return (
     <div className="flex justify-end items-center gap-2">
       {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />}
-      <Select value={status} onValueChange={handleStatusChange} disabled={isLoading}>
+      <Select value={status} onValueChange={(v) => { if (v) void handleStatusChange(v) }} disabled={isLoading}>
         <SelectTrigger className="w-[130px] h-8 text-xs">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
